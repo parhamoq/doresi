@@ -292,7 +292,7 @@
               </div>
               <div>
                   <label for="homework-date" class="block text-sm mb-1">تاریخ امروز</label>
-                  <input id="homework-date" type="text" placeholder="مثلا: ۱۴۰۴/۰۷/۰۷ ساعت ده شب" class="w-full rounded-md p-3 border focus:ring-2 focus:ring-indigo-300" />
+                  <input id="homework-date" type="text" placeholder="مثلا: ۱۴۰۴/۰۷/۰۷ " class="w-full rounded-md p-3 border focus:ring-2 focus:ring-indigo-300" />
               </div>
               <div>
                   <label for="homework-due-date" id="due-date-label" class="block text-sm mb-1">مهلت تحویل</label>
@@ -740,7 +740,7 @@
     function updateTypeButtons() {
         const currentType = homeworkTypeInput.value;
         dueDateLabel.textContent = currentType === 'exam' ? 'تاریخ امتحان' : 'مهلت تحویل';
-        homeworkDueDate.placeholder = currentType === 'exam' ? 'مثلا: شنبه ۱۴۰۴/۰۷/۰۷ زنگ سوم' : 'مثلا: تا جلسه آینده فیزیک';
+        homeworkDueDate.placeholder = currentType === 'exam' ? 'مثلا: شنبه ۱۴۰۴/۰۷/۱۲ زنگ سوم' : 'مثلا: تا جلسه آینده فیزیک';
         typeHomeworkBtn.classList.remove('bg-blue-500', 'text-white', 'ring-2', 'ring-blue-500');
         typeHomeworkBtn.classList.add('text-gray-300');
         typeExamBtn.classList.remove('bg-red-500', 'text-white', 'ring-2', 'ring-red-500');
@@ -921,3 +921,4 @@
   </script>
 </body>
 </html>
+

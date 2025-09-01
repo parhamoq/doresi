@@ -20,6 +20,7 @@
       --neon-cyan: #00e5ff;
       --neon-red: #ff4d4d;
       --glass-blur: 8px;
+      --class-block-height-reduction: 0rem; /* این مقدار از ارتفاع عمودی دکمه‌های کلاس کم می‌کند */
     }
     body[data-theme='dark'] {
       --bg-gradient: linear-gradient(180deg, #041223 0%, #071a38 55%, #05203a 100%);
@@ -73,13 +74,14 @@
       backdrop-filter: blur(var(--glass-blur));
       background: rgba(255, 255, 255, 0.04);
       border: 1px solid var(--border-color);
+      transition: background 220ms ease, border-color 220ms ease;
     }
     body[data-theme='light'] .site-header { background: rgba(255, 255, 255, 0.7); }
     .class-block {
       border-radius: 1.5rem;
       border: 1px solid var(--border-color);
       background: linear-gradient(180deg, rgba(255, 255, 255, 0.02), rgba(255, 255, 255, 0.01));
-      padding: 2rem;
+      padding: calc(2rem - var(--class-block-height-reduction, 0rem)) 2rem; /* استفاده از متغیر برای کاهش ارتفاع */
       display: flex;
       flex-direction: column;
       align-items: center;
@@ -201,13 +203,31 @@
       50% { border-color: var(--neon-red); }
     }
     @media (min-width: 750px) { .class-block { min-height: 10rem; } }
+    
+    #date-popover {
+      font-family: 'Vazirmatn';
+    }
   </style>
 </head>
 <body data-theme="dark">
   <div class="bg-ambient" aria-hidden="true"></div>
   <div id="particle-container" aria-hidden="true"></div>
 
-  <div id="main-content" class="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 py-10" style="transition: opacity 0.4s ease;">
+  <!-- Main content wrapper with reduced padding -->
+  <div id="main-content" class="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 py-4" style="transition: opacity 0.4s ease;">
+    
+    <!-- Time/Date Header -->
+    <div id="time-header-container" class="relative mb-2">
+      <button id="time-button" class="site-header w-full text-center p-1 rounded-xl cursor-pointer hover:bg-white/5 transition-colors">
+        <span id="clock-display" class="text-lg" style="color: var(--text);">--:--:--</span>
+      </button>
+      <div id="date-popover" class="hidden absolute top-full mt-2 w-full max-w-xs right-1/2 translate-x-1/2 z-50 p-4 rounded-xl site-header">
+        <div id="popover-content" class="text-center">
+            <p style="color:var(--muted)">در حال بارگذاری...</p>
+        </div>
+      </div>
+    </div>
+
     <header class="site-header flex flex-col sm:flex-row items-center justify-between gap-4 mb-8 p-3 rounded-xl">
       <div class="flex items-center gap-4">
         <img src="icon.png" alt="لوگو" class="w-14 h-14 rounded-full object-cover shadow-lg" onerror="this.style.display='none'" />
@@ -238,7 +258,7 @@
         </div>
       </section>
 
-      <section id="announcements-section" class="mt-12">
+      <section id="announcements-section" class="mt-8">
         <h2 class="text-2xl font-bold mb-4 border-b-2 pb-2" style="border-color: var(--border-color);">اعلانات</h2>
         <div id="announcements-list" class="space-y-3">
           <!-- Announcements will be loaded here by JS -->
@@ -246,7 +266,7 @@
       </section>
     </main>
   </div>
-  
+ 
   <!-- Support Floating Action Button (Resized) -->
   <button id="support-fab" class="fixed bottom-6 left-6 z-50 w-11 h-11 rounded-full bg-gradient-to-r from-teal-500 to-cyan-600 text-white shadow-lg flex items-center justify-center hover:scale-110 transition-transform focus:outline-none focus:ring-4 focus:ring-cyan-300" aria-label="باز کردن پشتیبانی">
       <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"></path><line x1="12" y1="17" x2="12.01" y2="17"></line></svg>
@@ -308,7 +328,7 @@
           </div>
       </div>
   </div>
-  
+ 
   <!-- Support Modal -->
   <div id="support-modal" class="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="support-title">
       <div class="modal-card">
@@ -341,7 +361,7 @@
 
   <!-- Import Supabase Client -->
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-  
+ 
   <script type="module">
     // ============================================
     // SUPABASE CONFIGURATION
@@ -393,6 +413,11 @@
     const supportDetails = document.getElementById('support-details');
     const supportFormView = document.getElementById('support-form-view');
     const supportSuccessView = document.getElementById('support-success-view');
+    // New Clock/Date elements
+    const timeButton = document.getElementById('time-button');
+    const clockDisplay = document.getElementById('clock-display');
+    const datePopover = document.getElementById('date-popover');
+    const popoverContent = document.getElementById('popover-content');
 
     // ============================================
     // Data & State
@@ -411,6 +436,69 @@
     const sunIcon = `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"></circle><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41"/></svg>`;
     const moonIcon = `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1111.21 3 7 7 0 0021 12.79z"/></svg>`;
 
+    // ============================================
+    // Time, Date & Countdown Logic (NEW)
+    // ============================================
+    function updateClock() {
+        const now = new Date();
+        const timeString = now.toLocaleTimeString('fa-IR', { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false, numberingSystem: 'arab' });
+        clockDisplay.textContent = timeString;
+    }
+
+    async function fetchAndRenderPopoverContent() {
+        const now = new Date();
+        
+        // --- Date Formats ---
+        const shamsiDate = new Intl.DateTimeFormat('fa-IR-u-ca-persian', { day: 'numeric', month: 'long', year: 'numeric', numberingSystem: 'arab' }).format(now);
+        let qamariDate = new Intl.DateTimeFormat('fa-IR-u-ca-islamic-civil', { day: 'numeric', month: 'long', year: 'numeric', numberingSystem: 'arab' }).format(now);
+        qamariDate = qamariDate.replace(' ه‍.ق.', ''); // حذف کردن ه‍.ق.
+        const miladiDate = new Intl.DateTimeFormat('fa-IR-u-ca-gregory', { day: 'numeric', month: 'long', year: 'numeric', numberingSystem: 'arab' }).format(now);
+
+        let contentHTML = `
+            <div class="space-y-2 text-sm">
+                <p><strong>شمسی:</strong> ${shamsiDate}</p>
+                <p><strong>قمری:</strong> ${qamariDate}</p>
+                <p><strong>میلادی:</strong> ${miladiDate}</p>
+            </div>
+            <hr class="my-3" style="border-color: var(--border-color);" />
+            <div id="countdown-list" class="space-y-2 text-sm">
+                <p style="color:var(--muted)">درحال بارگذاری روزشمار...</p>
+            </div>
+        `;
+        popoverContent.innerHTML = contentHTML;
+
+        // --- Countdown ---
+        try {
+            const { data: events, error } = await db.from('events').select('event_name, event_date').order('event_date', { ascending: true });
+            if (error) throw error;
+            
+            const countdownList = document.getElementById('countdown-list');
+            if (events && events.length > 0) {
+                let countdownHTML = '';
+                const today = new Date();
+                today.setHours(0, 0, 0, 0); // Normalize today's date for accurate comparison
+
+                events.forEach(event => {
+                    const eventDate = new Date(event.event_date);
+                    eventDate.setHours(0, 0, 0, 0); // Normalize event date
+                    
+                    const diffTime = eventDate - today;
+                    if (diffTime >= 0) { // Only show future events
+                        const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+                        const diffDaysPersian = new Intl.NumberFormat('fa-IR').format(diffDays);
+                        countdownHTML += `<div class="flex justify-between items-center"><span>${event.event_name}</span><span class="font-bold">${diffDaysPersian} روز</span></div>`;
+                    }
+                });
+                 countdownList.innerHTML = countdownHTML || '<p style="color:var(--muted)">رویداد آینده‌ای ثبت نشده.</p>';
+            } else {
+                 countdownList.innerHTML = '<p style="color:var(--muted)">رویداد آینده‌ای ثبت نشده.</p>';
+            }
+        } catch (e) {
+            console.error("Error fetching events:", e);
+            document.getElementById('countdown-list').innerHTML = `<p class="text-red-400">خطا در بارگذاری روزشمار.</p>`;
+        }
+    }
+    
     // ============================================
     // Theme, Particles, UI Helpers
     // ============================================
@@ -452,20 +540,20 @@
     }
     function showModal(modalEl) { modalEl.classList.add('visible'); }
     function hideModal(modalEl) { modalEl.classList.remove('visible'); }
-    
+   
     function showToast(message, type = 'success') {
         const toast = document.getElementById('toast-notification');
         const toastMessage = document.getElementById('toast-message');
 
         toastMessage.textContent = message;
-        
+       
         toast.className = 'fixed top-5 right-1/2 translate-x-1/2 z-[100] px-6 py-3 rounded-lg text-white transition-all duration-300 opacity-0 -translate-y-20';
         if (type === 'success') {
             toast.classList.add('bg-green-500');
         } else {
             toast.classList.add('bg-red-500');
         }
-        
+       
         requestAnimationFrame(() => {
             toast.classList.remove('opacity-0', '-translate-y-20');
             toast.classList.add('opacity-100', 'translate-y-0');
@@ -483,7 +571,7 @@
     let activeClone = null;
     async function openFullscreen(el, name) {
       if (activeClone) return;
-      
+     
       mainContent.classList.add('content-hidden');
       const rect = el.getBoundingClientRect();
       const clone = el.cloneNode(true);
@@ -528,7 +616,7 @@
                 .order('created_at', { ascending: false });
 
             if (hwError) throw hwError;
-            
+           
             contentDiv.innerHTML = renderHomeworks(homeworks, name);
             addDynamicEventListeners(contentDiv);
 
@@ -537,7 +625,7 @@
             contentDiv.innerHTML = `<p class="text-center text-red-400">خطا در بارگذاری اطلاعات کلاس.</p>`;
         }
     }
-    
+   
     function renderHomeworks(data, className) {
         let homeworkHTML = `<h2 class="text-3xl font-bold mb-6 text-center">تکلیف‌های کلاس ${className}</h2>`;
         if (!data || data.length === 0) {
@@ -547,7 +635,7 @@
             data.forEach(hw => {
                 const isNew = (new Date() - new Date(hw.created_at)) < 24 * 60 * 60 * 1000;
                 const isOwner = currentCreator && currentCreator === hw.creator;
-                
+               
                 homeworkHTML += `
                     <div class="p-4 rounded-lg border ${hw.is_exam ? 'exam-pin' : ''}" style="background-color: var(--card); border-color: var(--border-color);" data-hw-id="${hw.id}">
                         <div class="flex items-center justify-between gap-4">
@@ -612,7 +700,7 @@
     async function handleEdit(id) {
         const { data, error } = await db.from('homeworks').select('*').eq('id', id).single();
         if (error || !data || data.creator !== currentCreator) return;
-        
+       
         homeworkIdInput.value = data.id;
         classSelect.value = data.classname;
         homeworkDate.value = data.date;
@@ -625,7 +713,7 @@
         validateHomeworkForm();
         showModal(homeworkModal);
     }
-    
+   
     async function handleDelete(id) {
         const { data: recordToDelete, error: selectError } = await db.from('homeworks').select('*').eq('id', id).single();
         if (selectError || !recordToDelete || recordToDelete.creator !== currentCreator) return;
@@ -680,7 +768,7 @@
     loginModal.addEventListener('click', (e) => { if (e.target === loginModal) hideModal(loginModal); });
     closeHomeworkModal.addEventListener('click', () => { hideModal(homeworkModal); });
     homeworkModal.addEventListener('click', (e) => { if (e.target === homeworkModal) hideModal(homeworkModal); });
-    
+   
     async function logNoAccess(failedCode) {
         await db.from('noaccess').insert([{ attempted_code: failedCode }]);
     }
@@ -736,7 +824,7 @@
         updateTypeButtons();
         validateHomeworkForm();
     }
-    
+   
     function updateTypeButtons() {
         const currentType = homeworkTypeInput.value;
         dueDateLabel.textContent = currentType === 'exam' ? 'تاریخ امتحان' : 'مهلت تحویل';
@@ -780,7 +868,7 @@
             creator: currentCreator, is_exam: homeworkTypeInput.value === 'exam',
             is_edited: isEditing
         };
-        
+       
         if (!isEditing) {
             homeworkData.created_at = new Date().toISOString();
         }
@@ -788,7 +876,7 @@
         try {
             let result = isEditing ? await db.from('homeworks').update(homeworkData).eq('id', homeworkIdInput.value) : await db.from('homeworks').insert([homeworkData]);
             if (result.error) throw result.error;
-            
+           
             hideModal(homeworkModal);
             resetHomeworkModal();
 
@@ -828,7 +916,7 @@
     function listenForAnnouncements() {
         db.channel('public:announcements').on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'announcements' }, () => fetchAndRenderAnnouncements()).subscribe();
     }
-    
+   
     function initializePresence() {
         const channel = db.channel('online-users', { config: { presence: { key: `user-${Math.random().toString(36).substring(7)}` } } });
         channel.on('presence', { event: 'sync' }, () => {
@@ -885,7 +973,7 @@
         fetchAndRenderAnnouncements();
         listenForAnnouncements();
         initializePresence();
-        
+       
         const initialTheme = localStorage.getItem('theme') || 'dark';
         applyTheme(initialTheme);
         themeToggle.addEventListener('click', () => applyTheme(document.body.dataset.theme === 'dark' ? 'light' : 'dark'));
@@ -905,20 +993,38 @@
         closeSupportModal.addEventListener('click', () => hideModal(supportModal));
         supportModal.addEventListener('click', (e) => { if (e.target === supportModal) hideModal(supportModal); });
         submitSupport.addEventListener('click', handleSupportSubmit);
+
+        // --- New Clock/Date Listeners ---
+        updateClock();
+        setInterval(updateClock, 1000);
+
+        timeButton.addEventListener('click', (e) => {
+            e.stopPropagation();
+            const isHidden = datePopover.classList.toggle('hidden');
+            if (!isHidden) {
+                fetchAndRenderPopoverContent();
+            }
+        });
+        
+        document.addEventListener('click', (e) => {
+            if (!document.getElementById('time-header-container').contains(e.target)) {
+                datePopover.classList.add('hidden');
+            }
+        });
     }
-    
+   
     window.addEventListener('resize', createParticles);
     window.addEventListener('keydown', (e) => {
         if (e.key === 'Escape') {
             if (loginModal.classList.contains('visible')) hideModal(loginModal);
             else if (homeworkModal.classList.contains('visible')) hideModal(homeworkModal);
             else if (supportModal.classList.contains('visible')) hideModal(supportModal);
+            else if (datePopover && !datePopover.classList.contains('hidden')) datePopover.classList.add('hidden');
             else if (activeClone) closeFullscreen();
         }
     });
-    
+   
     document.addEventListener('DOMContentLoaded', init);
   </script>
 </body>
 </html>
-

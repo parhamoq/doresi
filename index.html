@@ -489,9 +489,9 @@
                         countdownHTML += `<div class="flex justify-between items-center"><span>${event.event_name}</span><span class="font-bold">${diffDaysPersian} روز</span></div>`;
                     }
                 });
-                 countdownList.innerHTML = countdownHTML || '<p style="color:var(--muted)">رویداد آینده‌ای ثبت نشده.</p>';
+                countdownList.innerHTML = countdownHTML || '<p style="color:var(--muted)">رویداد آینده‌ای ثبت نشده.</p>';
             } else {
-                 countdownList.innerHTML = '<p style="color:var(--muted)">رویداد آینده‌ای ثبت نشده.</p>';
+                countdownList.innerHTML = '<p style="color:var(--muted)">رویداد آینده‌ای ثبت نشده.</p>';
             }
         } catch (e) {
             console.error("Error fetching events:", e);
@@ -540,20 +540,20 @@
     }
     function showModal(modalEl) { modalEl.classList.add('visible'); }
     function hideModal(modalEl) { modalEl.classList.remove('visible'); }
-   
+    
     function showToast(message, type = 'success') {
         const toast = document.getElementById('toast-notification');
         const toastMessage = document.getElementById('toast-message');
 
         toastMessage.textContent = message;
-       
+        
         toast.className = 'fixed top-5 right-1/2 translate-x-1/2 z-[100] px-6 py-3 rounded-lg text-white transition-all duration-300 opacity-0 -translate-y-20';
         if (type === 'success') {
             toast.classList.add('bg-green-500');
         } else {
             toast.classList.add('bg-red-500');
         }
-       
+        
         requestAnimationFrame(() => {
             toast.classList.remove('opacity-0', '-translate-y-20');
             toast.classList.add('opacity-100', 'translate-y-0');
@@ -571,7 +571,7 @@
     let activeClone = null;
     async function openFullscreen(el, name) {
       if (activeClone) return;
-     
+      
       mainContent.classList.add('content-hidden');
       const rect = el.getBoundingClientRect();
       const clone = el.cloneNode(true);
@@ -616,7 +616,7 @@
                 .order('created_at', { ascending: false });
 
             if (hwError) throw hwError;
-           
+            
             contentDiv.innerHTML = renderHomeworks(homeworks, name);
             addDynamicEventListeners(contentDiv);
 
@@ -625,7 +625,7 @@
             contentDiv.innerHTML = `<p class="text-center text-red-400">خطا در بارگذاری اطلاعات کلاس.</p>`;
         }
     }
-   
+    
     function renderHomeworks(data, className) {
         let homeworkHTML = `<h2 class="text-3xl font-bold mb-6 text-center">تکلیف‌های کلاس ${className}</h2>`;
         if (!data || data.length === 0) {
@@ -635,7 +635,7 @@
             data.forEach(hw => {
                 const isNew = (new Date() - new Date(hw.created_at)) < 24 * 60 * 60 * 1000;
                 const isOwner = currentCreator && currentCreator === hw.creator;
-               
+                
                 homeworkHTML += `
                     <div class="p-4 rounded-lg border ${hw.is_exam ? 'exam-pin' : ''}" style="background-color: var(--card); border-color: var(--border-color);" data-hw-id="${hw.id}">
                         <div class="flex items-center justify-between gap-4">
@@ -700,7 +700,7 @@
     async function handleEdit(id) {
         const { data, error } = await db.from('homeworks').select('*').eq('id', id).single();
         if (error || !data || data.creator !== currentCreator) return;
-       
+        
         homeworkIdInput.value = data.id;
         classSelect.value = data.classname;
         homeworkDate.value = data.date;
@@ -713,7 +713,7 @@
         validateHomeworkForm();
         showModal(homeworkModal);
     }
-   
+    
     async function handleDelete(id) {
         const { data: recordToDelete, error: selectError } = await db.from('homeworks').select('*').eq('id', id).single();
         if (selectError || !recordToDelete || recordToDelete.creator !== currentCreator) return;
@@ -768,9 +768,27 @@
     loginModal.addEventListener('click', (e) => { if (e.target === loginModal) hideModal(loginModal); });
     closeHomeworkModal.addEventListener('click', () => { hideModal(homeworkModal); });
     homeworkModal.addEventListener('click', (e) => { if (e.target === homeworkModal) hideModal(homeworkModal); });
-   
+    
     async function logNoAccess(failedCode) {
         await db.from('noaccess').insert([{ attempted_code: failedCode }]);
+    }
+
+    // --- NEW: Function to log successful logins ---
+    async function logSuccessfulLogin(loginCode) {
+        try {
+            const { error } = await db.from('login_logs').insert([
+                {
+                    login_code: loginCode,
+                    login_timestamp: new Date().toISOString()
+                }
+            ]);
+            if (error) throw error;
+            console.log('Login logged successfully for code:', loginCode);
+        } catch (error) {
+            // It's better not to show an error to the user for this background task.
+            // Just log it to the console for debugging.
+            console.error('Error logging the successful login:', error.message);
+        }
     }
 
     submitLogin.addEventListener('click', async () => {
@@ -792,6 +810,10 @@
                 loginMessage.className = 'text-sm mb-3 h-6 text-green-400';
                 sessionStorage.setItem('currentCreator', code);
                 updateUIForLogin(code);
+
+                // --- MODIFICATION: Call the logging function on success ---
+                await logSuccessfulLogin(code);
+
                 setTimeout(() => {
                     hideModal(loginModal);
                     resetHomeworkModal();
@@ -824,7 +846,7 @@
         updateTypeButtons();
         validateHomeworkForm();
     }
-   
+    
     function updateTypeButtons() {
         const currentType = homeworkTypeInput.value;
         dueDateLabel.textContent = currentType === 'exam' ? 'تاریخ امتحان' : 'مهلت تحویل';
@@ -868,7 +890,7 @@
             creator: currentCreator, is_exam: homeworkTypeInput.value === 'exam',
             is_edited: isEditing
         };
-       
+        
         if (!isEditing) {
             homeworkData.created_at = new Date().toISOString();
         }
@@ -876,7 +898,7 @@
         try {
             let result = isEditing ? await db.from('homeworks').update(homeworkData).eq('id', homeworkIdInput.value) : await db.from('homeworks').insert([homeworkData]);
             if (result.error) throw result.error;
-           
+            
             hideModal(homeworkModal);
             resetHomeworkModal();
 
@@ -916,7 +938,7 @@
     function listenForAnnouncements() {
         db.channel('public:announcements').on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'announcements' }, () => fetchAndRenderAnnouncements()).subscribe();
     }
-   
+    
     function initializePresence() {
         const channel = db.channel('online-users', { config: { presence: { key: `user-${Math.random().toString(36).substring(7)}` } } });
         channel.on('presence', { event: 'sync' }, () => {
@@ -973,7 +995,7 @@
         fetchAndRenderAnnouncements();
         listenForAnnouncements();
         initializePresence();
-       
+        
         const initialTheme = localStorage.getItem('theme') || 'dark';
         applyTheme(initialTheme);
         themeToggle.addEventListener('click', () => applyTheme(document.body.dataset.theme === 'dark' ? 'light' : 'dark'));
@@ -1012,7 +1034,7 @@
             }
         });
     }
-   
+    
     window.addEventListener('resize', createParticles);
     window.addEventListener('keydown', (e) => {
         if (e.key === 'Escape') {
@@ -1023,7 +1045,7 @@
             else if (activeClone) closeFullscreen();
         }
     });
-   
+    
     document.addEventListener('DOMContentLoaded', init);
   </script>
 </body>

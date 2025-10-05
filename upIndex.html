@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>سایت در حال بروزرسانی</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Favicon -->
+  <link rel="icon" href="icon.png" type="image/png">
+  <!-- Vazirmatn Font -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Vazirmatn:wght@300;400;500;700;900&display=swap" rel="stylesheet">
+  <style>
+    /* تمام استایل‌های اصلی برای حفظ ظاهر حفظ شده‌اند */
+    :root {
+      --neon-yellow: #FFD525;
+      --neon-green: #39ff14;
+      --neon-orange: #ff9900;
+      --neon-cyan: #00e5ff;
+      --neon-red: #ff4d4d;
+      --glass-blur: 8px;
+    }
+    body[data-theme='dark'] {
+      --bg-gradient: linear-gradient(180deg, #041223 0%, #071a38 55%, #05203a 100%);
+      background-attachment: fixed;
+      background-repeat: no-repeat;
+      --surface: rgba(10, 16, 25, 0.7);
+      --muted: #9aa4b2;
+      --text: #e6eef8;
+      --card: rgba(255, 255, 255, 0.02);
+      --border-color: rgba(255, 255, 255, 0.08);
+      --particle: rgba(255, 255, 255, 0.06);
+      --block-bg: #161b22;  
+      color-scheme: dark;
+    }
+    body[data-theme='light'] {
+      --bg-gradient: linear-gradient(180deg, #f7f9fb, #eef2f6);
+      --surface: rgba(255, 255, 255, 0.8);
+      --muted: #556074;
+      --text: #0f1720;
+      --card: rgba(2, 6, 23, 0.02);
+      --border-color: rgba(2, 6, 23, 0.1);
+      --particle: rgba(10, 20, 30, 0.06);
+      --block-bg: #ffffff;
+      color-scheme: light;
+    }
+    html, body { height: 100%; }
+    body {
+      font-family: 'Vazirmatn', system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial;
+      background: var(--bg-gradient);
+      color: var(--text);
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
+      transition: background 240ms ease, color 240ms ease;
+      overflow: hidden;
+    }
+    .bg-ambient { position: fixed; inset: 0; pointer-events: none; z-index: 0; mix-blend-mode: overlay; }
+    #particle-container { position: fixed; inset: 0; pointer-events: none; z-index: 0; }
+    .particle {
+      position: absolute; border-radius: 999px; background: var(--particle);
+      opacity: 0; animation: floatUp linear infinite;
+    }
+    @keyframes floatUp {
+      0% { transform: translateY(10vh) scale(0.85); opacity: 0; }
+      20% { opacity: 0.6; }
+      100% { transform: translateY(-120vh) scale(1); opacity: 0; }
+    }
+  </style>
+</head>
+<body data-theme="dark">
+  <div class="bg-ambient" aria-hidden="true"></div>
+  <div id="particle-container" aria-hidden="true"></div>
+
+  <!-- دکمه تغییر تم -->
+  <button id="theme-toggle" class="fixed top-4 right-4 z-20 p-3 rounded-lg bg-white/5 hover:bg-white/10 transition-colors focus:outline-none focus:ring-2 ring-white/20" aria-label="تغییر تم"></button>
+
+  <!-- محتوای اصلی صفحه -->
+  <main class="relative z-10 min-h-screen flex flex-col items-center justify-center text-center px-4">
+    <img src="icon.png" alt="لوگو" class="w-24 h-24 rounded-full object-cover shadow-lg mb-8" />
+    <h1 class="text-3xl md:text-4xl font-extrabold" style="color:var(--text)">
+      سایت در حال آپدیته یکمی منتظر بمونین!
+    </h1>
+  </main>
+
+  <script type="module">
+    // ============================================
+    // اسکریپت ساده‌شده فقط برای افکت‌ها و تم
+    // ============================================
+    const particleContainer = document.getElementById('particle-container');
+    const themeToggle = document.getElementById('theme-toggle');
+
+    const sunIcon = `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"></circle><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41"/></svg>`;
+    const moonIcon = `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1111.21 3 7 7 0 0021 12.79z"/></svg>`;
+
+    function applyTheme(theme) {
+      document.body.dataset.theme = theme;
+      themeToggle.innerHTML = theme === 'dark' ? sunIcon : moonIcon;
+      localStorage.setItem('theme', theme);
+    }
+
+    function createParticles() {
+      particleContainer.innerHTML = '';
+      const count = Math.floor(window.innerWidth / 15);
+      for (let i = 0; i < count; i++) {
+        const p = document.createElement('div');
+        p.className = 'particle';
+        const size = (Math.random() * 2) + 0.6;
+        Object.assign(p.style, {
+          width: `${size}px`,
+          height: `${size}px`,
+          left: `${Math.random() * 100}%`,
+          top: `${Math.random() * 100}%`,
+          animationDuration: (18 + Math.random() * 22) + 's',
+          opacity: 0.05 + Math.random() * 0.25
+        });
+        particleContainer.appendChild(p);
+      }
+    }
+
+    function init() {
+      createParticles();
+      const initialTheme = localStorage.getItem('theme') || 'dark';
+      applyTheme(initialTheme);
+      themeToggle.addEventListener('click', () => applyTheme(document.body.dataset.theme === 'dark' ? 'light' : 'dark'));
+    }
+
+    document.addEventListener('DOMContentLoaded', init);
+    window.addEventListener('resize', createParticles);
+  </script>
+</body>
+</html>
